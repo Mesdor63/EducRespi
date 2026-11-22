@@ -20,7 +20,7 @@ export class ScreenWakeLock {
       }, { once: true });
     } catch (error) {
       // Fonctionnalité facultative : l'application reste utilisable sans Wake Lock.
-      console.info('MaReduc : maintien de l’écran non disponible.', error);
+      console.info('EducRespi : maintien de l’écran non disponible.', error);
     } finally {
       this.#requesting = false;
     }

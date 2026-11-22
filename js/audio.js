@@ -33,7 +33,7 @@ export class AudioEngine {
       if (prefs.mode === 'pad') this.#startPad(session);
       if (prefs.mode === 'wave') this.#startWave(session);
     } catch (error) {
-      console.warn('MaReduc : audio indisponible.', error);
+      console.warn('EducRespi : audio indisponible.', error);
       this.stop();
     }
   }

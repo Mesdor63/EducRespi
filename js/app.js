@@ -57,7 +57,7 @@ function resetVisual(message = 'Prêt') {
   setPhaseText(message);
   el.timer.textContent = '0.0';
   el.cycle.textContent = 'Cycle 0';
-  document.title = 'MaReduc';
+  document.title = 'EducRespi';
 }
 function isSessionActive() { return state.running && !state.paused; }
 
@@ -87,7 +87,7 @@ function pauseSession() {
   void wakeLock.release();
   setControls('paused');
   setPhaseText('Pause');
-  document.title = 'MaReduc';
+  document.title = 'EducRespi';
 }
 async function resumeSession() {
   if (!state.running || !state.paused) return;
@@ -154,7 +154,7 @@ function tick(timestamp) {
     state.lastPhaseIndex = state.phaseIndex;
     audio.transition(phase.key);
     navigator.vibrate?.(35);
-    document.title = `MaReduc — ${phase.label} · cycle ${state.cycles}`;
+    document.title = `EducRespi — ${phase.label} · cycle ${state.cycles}`;
   }
   const progress = Math.min(elapsed / phase.duration, 1);
   const ease = (1 - Math.cos(Math.PI * progress)) / 2;
@@ -276,6 +276,6 @@ setControls('idle');
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .catch(error => console.warn('MaReduc : mode hors ligne indisponible.', error));
+      .catch(error => console.warn('EducRespi : mode hors ligne indisponible.', error));
   }, { once: true });
 }
