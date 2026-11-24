@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="EducRespi — application de respiration guidée.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./css/style.css">
+  <title>EducRespi — respiration guidée</title>
+</head>
+<body>
+  <noscript><p class="noscript">EducRespi a besoin de JavaScript pour fonctionner. Activez-le dans votre navigateur.</p></noscript>
+
+  <main class="app" id="app">
+    <header class="app-header">
+      <h1>EducRespi</h1>
+      <p>Respiration guidée</p>
+      <div class="header-actions">
+        <button class="button secondary header-button" id="user-button" type="button" aria-haspopup="dialog">Utilisateur</button>
+        <button class="button secondary header-button" id="mode-toggle" type="button">Passer en mode relaxation</button>
+        <button class="button secondary header-button" id="help-button" type="button" aria-haspopup="dialog">Aide</button>
+      </div>
+    </header>
+    <section class="stage" aria-label="Visualisation de la respiration">
+      <div class="ring" aria-hidden="true"></div>
+      <div class="bubble" id="bubble" aria-hidden="true"></div>
+      <div class="overlay">
+        <span id="phase-label" role="status" aria-live="polite">Prêt</span>
+        <span id="phase-timer">0.0</span>
+        <span id="cycle-count">Cycle 0</span>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Réglages de la séance">
+      <div class="phase-grid">
+        <div class="field"><label for="inhale">Inspiration (s)</label><input id="inhale" type="number" value="5" min="1" max="60" step="0.5" inputmode="decimal"></div>
+        <div class="field"><label for="hold-full">Suspension pleine (s)</label><input id="hold-full" type="number" value="0" min="0" max="60" step="0.5" inputmode="decimal"></div>
+        <div class="field"><label for="exhale">Expiration (s)</label><input id="exhale" type="number" value="5" min="1" max="60" step="0.5" inputmode="decimal"></div>
+        <div class="field"><label for="hold-empty">Suspension vide (s)</label><input id="hold-empty" type="number" value="0" min="0" max="60" step="0.5" inputmode="decimal"></div>
+      </div>
+
+      <div class="setting-row">
+        <label for="duration">Durée de séance (min)</label>
+        <input id="duration" type="number" value="5" min="1" max="120" step="1" inputmode="numeric">
+      </div>
+
+      <div class="setting-row volume-row">
+        <label for="volume">Volume des sons guidés</label>
+        <input id="volume" type="range" min="0" max="150" value="90">
+      </div>
+
+      <div class="sound-row">
+        <label class="check-label"><input id="sound-enabled" type="checkbox" checked> Sons guidés</label>
+        <label class="sr-only" for="sound-mode">Son de respiration</label>
+        <select id="sound-mode">
+          <option value="pad">Nappe harmonique</option>
+          <option value="gong">Gongs de transition</option>
+          <option value="chime">Carillons</option>
+        </select>
+      </div>
+
+      <div class="buttons">
+        <button class="button primary" id="start" type="button">Démarrer</button>
+        <button class="button secondary" id="fullscreen" type="button">Plein écran</button>
+        <button class="button pause" id="pause" type="button" hidden>Pause</button>
+        <button class="button stop" id="stop" type="button" hidden>Arrêter</button>
+      </div>
+      <p id="remaining" role="timer" aria-live="off">Temps restant : 05:00</p>
+
+      <section class="presets" aria-label="Séances enregistrées">
+        <div class="preset-entry">
+          <label class="sr-only" for="preset-name">Nom de la séance</label>
+          <input id="preset-name" type="text" maxlength="25" placeholder="Nom (ex. Matin)">
+          <button id="save-preset" type="button">Enregistrer</button>
+        </div>
+        <button class="button secondary preset-open" id="open-presets" type="button">Mes séances (0/50)</button>
+        <p id="preset-status" role="status" aria-live="polite"></p>
+        <dialog id="preset-dialog" class="preset-dialog" aria-labelledby="preset-dialog-title">
+          <div class="dialog-head">
+            <h2 id="preset-dialog-title">Mes séances enregistrées</h2>
+            <button id="close-presets" class="dialog-close" type="button">Fermer</button>
+          </div>
+          <ul id="preset-list" class="preset-list"></ul>
+          <p id="dialog-status" class="dialog-status" role="status" aria-live="polite"></p>
+        </dialog>
+      </section>
+      <dialog id="user-dialog" class="preset-dialog" aria-labelledby="user-dialog-title">
+        <div class="dialog-head">
+          <h2 id="user-dialog-title">Utilisateurs</h2>
+          <button id="close-users" class="dialog-close" type="button">Fermer</button>
+        </div>
+        <p class="dialog-hint">Touchez un utilisateur pour charger ses séances, ses réglages et son historique.</p>
+        <ul id="user-list" class="user-list"></ul>
+        <div class="preset-entry user-add">
+          <label class="sr-only" for="user-name">Nom du nouvel utilisateur</label>
+          <input id="user-name" type="text" maxlength="25" placeholder="Nouvel utilisateur" autocomplete="off">
+          <button id="add-user" type="button">Ajouter</button>
+        </div>
+        <p id="user-status" class="dialog-status" role="status" aria-live="polite"></p>
+        <div class="data-actions">
+          <button id="export-current" type="button">Exporter cet utilisateur</button>
+          <button id="export-all" type="button">Exporter tout</button>
+          <button id="import-data" type="button">Importer une sauvegarde</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden>
+        </div>
+      </dialog>
+
+      <dialog id="help-dialog" class="preset-dialog help-dialog" aria-labelledby="help-dialog-title">
+        <div class="dialog-head">
+          <h2 id="help-dialog-title">Aide</h2>
+          <button id="close-help" class="dialog-close" type="button">Fermer</button>
+        </div>
+        <p class="dialog-hint">EducRespi vous guide en respirant : suivez la bulle, elle grossit quand vous inspirez et rétrécit quand vous expirez.</p>
+
+        <details open>
+          <summary>Faire une séance</summary>
+          <ol>
+            <li>Réglez le rythme en secondes : <strong>inspiration</strong>, <strong>suspension pleine</strong> (poumons pleins), <strong>expiration</strong>, <strong>suspension vide</strong> (poumons vides). Mettez <strong>0</strong> pour supprimer une suspension.</li>
+            <li>Choisissez la <strong>durée</strong> de la séance (1 à 120 min).</li>
+            <li>Appuyez sur <strong>Démarrer</strong> et suivez la bulle : <span class="hint-blue">bleue</span> en mouvement, <span class="hint-orange">orange</span> en suspension pleine, <span class="hint-red">rouge</span> en suspension vide.</li>
+            <li><strong>Pause</strong> ou <strong>Arrêter</strong> à tout moment. L'écran reste allumé ; si vous quittez l'application, la séance se met en pause.</li>
+          </ol>
+          <p>Clavier : <kbd>Espace</kbd> démarre ou met en pause, <kbd>Échap</kbd> arrête, <kbd>?</kbd> ouvre cette aide.</p>
+        </details>
+
+        <details>
+          <summary>Rythmes pour commencer</summary>
+          <table class="help-table">
+            <thead><tr><th>Rythme</th><th>Réglages (s)</th></tr></thead>
+            <tbody>
+              <tr><td>Lent et régulier</td><td>5 – 0 – 5 – 0</td></tr>
+              <tr><td>Carré</td><td>4 – 4 – 4 – 4</td></tr>
+              <tr><td>Expiration allongée (4-7-8)</td><td>4 – 7 – 8 – 0</td></tr>
+            </tbody>
+          </table>
+          <p>Commencez par des séances courtes. En cas de vertige ou de gêne, arrêtez et respirez normalement. Ces exercices ne remplacent pas un avis médical.</p>
+        </details>
+
+        <details>
+          <summary>Sons et modes d'affichage</summary>
+          <ul>
+            <li><strong>Sons guidés</strong> : nappe harmonique (une note qui monte et descend avec votre souffle), gongs ou carillons (un son à chaque changement de phase).</li>
+            <li>Le curseur règle le <strong>volume</strong>, même pendant la séance.</li>
+            <li><strong>Mode relaxation</strong> : n'affiche que la bulle, le volume et les boutons. Le même bouton ramène au mode éducatif.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Séances enregistrées</summary>
+          <p>Réglez un rythme, donnez-lui un nom (ex. « Matin ») et touchez <strong>Enregistrer</strong>. <strong>Mes séances</strong> les liste : touchez-en une pour la charger, ✕ pour la supprimer (50 au maximum).</p>
+        </details>
+
+        <details>
+          <summary>Historique</summary>
+          <p>Chaque séance <strong>menée jusqu'au bout</strong> est ajoutée : date, durée, rythme et nombre de cycles. Une séance arrêtée avant la fin n'est pas comptée. Les 8 dernières sont affichées, avec le total ; vous pouvez effacer l'historique.</p>
+        </details>
+
+        <details>
+          <summary>Utilisateurs</summary>
+          <p>Le bouton <strong>Utilisateur : …</strong> ouvre la liste. Chaque utilisateur a ses propres réglages, sons, séances enregistrées et historique. Touchez un nom pour changer, ✎ pour renommer, ✕ pour supprimer, ou ajoutez un nouvel utilisateur (20 au maximum).</p>
+          <p>Il n'y a pas de mot de passe : tous les utilisateurs sont accessibles depuis cet appareil.</p>
+        </details>
+
+        <details>
+          <summary>Sauvegarder mes données</summary>
+          <p>Vos données sont gardées <strong>dans ce navigateur uniquement</strong> : vider les données du site ou changer d'appareil les efface.</p>
+          <p>Dans la fenêtre <strong>Utilisateurs</strong>, <strong>Exporter</strong> crée un fichier de sauvegarde et <strong>Importer</strong> le restaure, sur cet appareil ou un autre. L'import ajoute les utilisateurs du fichier ou remplace ceux qui existent déjà, après confirmation.</p>
+        </details>
+
+        <details>
+          <summary>Installer l'application</summary>
+          <p>Dans le menu de votre navigateur, choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ». Elle fonctionne ensuite sans connexion.</p>
+        </details>
+      </dialog>
+
+      <section class="history" id="history-section" aria-label="Historique des séances">
+        <h2 id="history-title">Historique récent</h2>
+        <p id="history-empty">Aucune séance terminée pour le moment.</p>
+        <p id="history-summary" class="history-summary"></p>
+        <ul id="history-list" class="history-list"></ul>
+        <button id="clear-history" class="history-clear" type="button" hidden>Effacer l'historique</button>
+      </section>
+      <p class="help">Espace : démarrer / pause · Échap : arrêter · ? : aide</p>
+    </section>
+    <footer class="app-footer">Version 1.5.0</footer>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
